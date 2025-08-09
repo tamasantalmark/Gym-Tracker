@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useApp } from '../context.jsx'
 import ExerciseSearch from '../components/ExerciseSearch.jsx'
@@ -6,19 +6,20 @@ import ExerciseSearch from '../components/ExerciseSearch.jsx'
 export default function SessionPage(){
   const nav = useNavigate()
   const { id } = useParams()
-  const { state, updateSession, deleteSession, addExerciseToSession, createExercise, addSet, updateSet, deleteSet, reorderExercises, createTemplateFromSession } = useApp()
-  const session = state.sessions.find(s=>s.id===id)
+  const { state, updateSession, deleteSession, addExerciseToSession, createExercise, addSet, updateSet, deleteSet, createTemplateFromSession } = useApp()
+  const session = state.sessions.find(s=>String(s.id)===String(id))
   const [edit, setEdit] = useState({title: session?.title||'', notes: session?.notes||'', status: session?.status || 'planned'})
+  const [searchOpen, setSearchOpen] = useState(false)
 
   if(!session) return <div className="card">Not found. <button className="ghost" onClick={()=>nav('/')}>Back</button></div>
 
   const exercises = state.sessionExercises
-    .filter(se=>se.session_id===id)
+    .filter(se=>String(se.session_id)===String(id))
     .sort((a,b)=>a.order_index - b.order_index)
     .map(se=> ({
       ...se,
-      exercise: state.exercises.find(e=>e.id===se.exercise_id),
-      sets: state.sets.filter(st=>st.session_exercise_id===se.id).sort((a,b)=>a.set_index-b.set_index)
+      exercise: state.exercises.find(e=>String(e.id)===String(se.exercise_id)),
+      sets: state.sets.filter(st=>String(st.session_exercise_id)===String(se.id)).sort((a,b)=>a.set_index-b.set_index)
     }))
 
   function saveHeader(){
@@ -26,12 +27,16 @@ export default function SessionPage(){
   }
 
   function onPick(p){
+    console.log("onPick called with", p)
     if(p.type==='create'){
       const exId = createExercise({ name: p.name, category: 'other', equipment: 'other' })
+      console.log("Created new exercise id:", exId)
       addExerciseToSession(id, exId)
     } else {
+      console.log("Picked existing exercise id:", p.id)
       addExerciseToSession(id, p.id)
     }
+    setSearchOpen(false) // bezárja a keresőt
   }
 
   function dupSet(st){
@@ -75,8 +80,14 @@ export default function SessionPage(){
 
       <div className="card">
         <h3>Add exercise</h3>
-        <ExerciseSearch onPick={onPick} />
+        <button onClick={()=>setSearchOpen(true)}>Open search</button>
       </div>
+
+      {searchOpen && (
+        <div className="card">
+          <ExerciseSearch onPick={onPick} />
+        </div>
+      )}
 
       {exercises.map(se => (
         <div key={se.id} className="card grid">
