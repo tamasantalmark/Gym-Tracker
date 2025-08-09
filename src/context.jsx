@@ -28,7 +28,9 @@ export function AppProvider({ children }) {
     updateSet: (setId, patch) => { api.updateSet(setId, patch); setState(api.bootstrap()) },
     deleteSet: (setId) => { api.deleteSet(setId); setState(api.bootstrap()) },
     createTemplateFromSession: (sessionId, name) => {
-      api.createTemplateFromSession(sessionId, name); setState(api.bootstrap())
+      const id = api.createTemplateFromSession(sessionId, name)
+      setState(api.bootstrap())
+      return id
     },
     applyTemplate: (templateId, date) => {
       const id = api.applyTemplate(templateId, date); setState(api.bootstrap()); return id
