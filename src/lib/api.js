@@ -89,9 +89,22 @@ export function deleteSet(id){
 export function createTemplateFromSession(sessionId, name){
   const t = { id: uid(), user_id: db.user.id, name, description: '', created_at: Date.now(), updated_at: Date.now() }
   db.templates.push(t)
-  const ses = db.sessionExercises.filter(se=>se.session_id===sessionId).sort((a,b)=>a.order_index-b.order_index)
+  const ses = db.sessionExercises
+    .filter(se=>se.session_id===sessionId)
+    .sort((a,b)=>a.order_index-b.order_index)
   ses.forEach((se, idx)=>{
-    const te = { id: uid(), template_id: t.id, exercise_id: se.exercise_id, default_sets: 3, default_reps: 10, default_weight: null, order_index: idx }
+    const sets = db.sets
+      .filter(st=>st.session_exercise_id===se.id)
+      .sort((a,b)=>a.set_index-b.set_index)
+    const te = {
+      id: uid(),
+      template_id: t.id,
+      exercise_id: se.exercise_id,
+      default_sets: sets.length || 1,
+      default_reps: sets[0]?.reps || 10,
+      default_weight: sets[0]?.weight ?? null,
+      order_index: idx
+    }
     db.templateExercises.push(te)
   })
   persist(); return t.id
